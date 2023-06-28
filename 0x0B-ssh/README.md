@@ -53,7 +53,6 @@ To connect to a remote host using an SSH RSA key pair, follow these steps:
 3. Use the `ssh` command followed by the username and IP address or hostname of the remote host. For example:
 4. If the private key is stored in a different location or has a different name, you can specify it using the `-i` option:
 
-
 ### 6. The advantage of using #!/usr/bin/env bash instead of /bin/bash
 
 The shebang line `#!/usr/bin/env bash` provides the following advantages over specifying `/bin/bash` directly:
