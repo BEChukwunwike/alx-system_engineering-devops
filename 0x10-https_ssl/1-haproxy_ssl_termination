@@ -40,7 +40,7 @@ frontend codedweb-frontend-http
         default_backend codedweb-backend
 
 frontend codedweb-frontend-https
-        bind *:443 ssl crt /etc/letsencrypt/live/www.codedweb.tech/fullchain.pem
+        bind *:443 ssl crt /etc/ssl/www.codedweb.tech/www.codedweb.tech.pem
         http-request set-header X-Forwarded-Proto https
         default_backend codedweb-backend
 
