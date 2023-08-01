@@ -1,14 +1,13 @@
-#!/usr/bin/env bash
-#puppet file that makes changes to configuration file
+#Puppet script in ruby that creates an SSH config file
 
-file { 'etc/ssh/ssh_config':
-	ensure => present,
+file_line { 'Turn off passwd auth':
+  ensure => 'present',
+  path   => '/etc/ssh/ssh_config',
+  line   => '    PasswordAuthentication no',
+}
 
-content =>"
-
-	#SSH client configuration
-	host*
-	IdentityFile ~/.ssh/school
-	PasswordAuthentication no
-	"
+file_line { 'Declare identity file':
+  ensure => 'present',
+  path   => '/etc/ssh/ssh_config',
+  line   => '    IdentityFile ~/.ssh/school',
 }
