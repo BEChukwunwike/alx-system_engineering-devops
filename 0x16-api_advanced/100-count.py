@@ -1,56 +1,69 @@
 #!/usr/bin/python3
 """
-This is a module that uses the get HTTP header method to get resources
-from the Reddit API
+Function that queries the Reddit API and prints
+the top ten hot posts of a subreddit
 """
-import json
+import re
 import requests
 
 
-def count_words(subreddit, word_list, count=[], after=""):
-    """
-    This is a function that count words using the REDDIT API
-    """
-    ua = {
-          'User-Agent': 'Google Chrome Version 115.0.0.0:v1.0.0 (by /u/bdov_)'
-          }
-    url = 'https://www.reddit.com/r/{}/hot/.json'.format(subreddit)
-    if after == "" or after is None:
-        count = len(word_list) * [0]
+def add_title(dictionary, hot_posts):
+    """ Adds item into a list """
+    if len(hot_posts) == 0:
+        return
 
-    params = {'after': after}
-    resp = requests.get(url, headers=ua, allow_redirects=False, params=params)
-    if resp.status_code == 200:
-        data = resp.json()
+    title = hot_posts[0]['data']['title'].split()
+    for word in title:
+        for key in dictionary.keys():
+            c = re.compile("^{}$".format(key), re.I)
+            if c.findall(word):
+                dictionary[key] += 1
+    hot_posts.pop(0)
+    add_title(dictionary, hot_posts)
 
-        for heading in (data['data']['children']):
-            for word in heading['data']['title'].split():
-                for item in range(len(word_list)):
-                    if word_list[item].lower() == word.lower():
-                        count[item] += 1
-        after = data['data']['after']
-        if after is None:
-            keep = []
-            for itr in range(len(word_list)):
-                for tmp in range(itr + 1, len(word_list)):
-                    if word_list[itr].lower() == word_list[tmp].lower():
-                        keep.append(tmp)
-                        count[itr] += count[tmp]
 
-            for itr in range(len(word_list)):
-                for tmp in range(itr, len(word_list)):
-                    if (count[tmp] > count[itr] or
-                            (word_list[itr] > word_list[tmp] and
-                             count[tmp] == count[itr])):
-                        aux = count[itr]
-                        count[itr] = count[tmp]
-                        count[tmp] = aux
-                        aux = word_list[itr]
-                        word_list[itr] = word_list[tmp]
-                        word_list[tmp] = aux
+def recurse(subreddit, dictionary, after=None):
+    """ Queries the Reddit API """
+    u_agent = 'Mozilla/5.0'
+    headers = {
+        'User-Agent': u_agent
+    }
 
-            for i in range(len(word_list)):
-                if (count[i] > 0) and i not in keep:
-                    print("{}: {}".format(word_list[i].lower(), count[i]))
-        else:
-            count_words(subreddit, word_list, count, after)
+    params = {
+        'after': after
+    }
+
+    url = "https://www.reddit.com/r/{}/hot.json".format(subreddit)
+    res = requests.get(url,
+                       headers=headers,
+                       params=params,
+                       allow_redirects=False)
+
+    if res.status_code != 200:
+        return None
+
+    dic = res.json()
+    hot_posts = dic['data']['children']
+    add_title(dictionary, hot_posts)
+    after = dic['data']['after']
+    if not after:
+        return
+    recurse(subreddit, dictionary, after=after)
+
+
+def count_words(subreddit, word_list, dictionary=None):
+    """ Init function """
+    if dictionary is None:
+        dictionary = {}
+
+    for word in word_list:
+        word = word.lower()
+        if word not in dictionary:
+            dictionary[word] = 0
+
+    recurse(subreddit, dictionary)
+
+    sorted_items = sorted(dictionary.items(), key=lambda kv: (-kv[1], kv[0]))
+    for item in sorted_items:
+        if item[1] > 0:
+            print("{}: {}".format(item[0], item[1]))

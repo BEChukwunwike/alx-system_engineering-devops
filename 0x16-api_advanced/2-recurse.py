@@ -1,30 +1,30 @@
 #!/usr/bin/python3
-"""
-This is a module that uses the get HTTP header method to get resources
-from the Reddit API
-"""
-from requests import get
+"""Function to query a list of all hot posts on a given Reddit subreddit."""
+import requests
 
 
-def recurse(subreddit, hot_list=[], after=None):
-    """
-    This is a function that recursively returns the 10 top post from a
-    subreddit using the REDDIT API
-    """
-    if subreddit is None or type(subreddit) is not str:
+def recurse(subreddit, hot_list=[], after="", count=0):
+    """Returns a list of titles of all hot posts on a given subreddit."""
+    url = "https://www.reddit.com/r/{}/hot/.json".format(subreddit)
+    headers = {
+        "User-Agent": "linux:0x16.api.advanced:v1.0.0 (by /u/bdov_)"
+    }
+    params = {
+        "after": after,
+        "count": count,
+        "limit": 100
+    }
+    response = requests.get(url, headers=headers, params=params,
+                            allow_redirects=False)
+    if response.status_code == 404:
         return None
-    user_agent = {'User-Agent': 'Google Chrome Version 115.0.0.0'}
-    url = 'https://www.reddit.com/r/{}/hot/.json'.format(subreddit)
-    params = {'after': after}
-    resp = get(url, headers=user_agent, allow_redirects=False, params=params)
 
-    if resp.status_code == 200:
-        data = resp.json().get('data').get('after')
-        if data is not None:
-            after = data
-            recurse(subreddit, hot_list, after)
-        titles = resp.json().get('data').get('children')
-        for title in titles:
-            hot_list.append(title.get('data').get('title'))
-        return hot_list
-    return None
+    results = response.json().get("data")
+    after = results.get("after")
+    count += results.get("dist")
+    for c in results.get("children"):
+        hot_list.append(c.get("data").get("title"))
+
+    if after is not None:
+        return recurse(subreddit, hot_list, after, count)
+    return hot_list
